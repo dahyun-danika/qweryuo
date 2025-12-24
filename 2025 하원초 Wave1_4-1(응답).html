@@ -1,0 +1,447 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>학생 네트워크 시각화</title>
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; font-family: sans-serif; }
+    #controls { position: absolute; top: 10px; left: 10px; z-index: 1000; background: white; padding: 10px; border-radius: 8px; }
+    button { margin: 4px; }
+    .node { stroke: #fff; stroke-width: 1.5px; cursor: pointer; }
+    .link { stroke-opacity: 0.4; stroke-width: 2px; fill: none; }
+    .link.highlight { stroke-opacity: 1; stroke-width: 4px; }
+    .highlight-node { stroke: black; stroke-width: 3px; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <button onclick="toggleLinks('friend')">친구관계 보기</button>
+    <button onclick="toggleLinks('desired')">친하고 싶은 친구 보기</button>
+    <button onclick="toggleLinks('study')">함께 공부하는 친구 보기</button>
+    <button onclick="toggleLinks('collab')">함께 협력하는 친구 보기</button>
+    <button onclick="toggleLinks('help')">도움을 요청하는 친구관계 보기</button>
+  </div>
+
+  <script>
+const students = [
+  { id: "11김*재", gender: 3 },
+  { id: "12김*준", gender: 0 },
+  { id: "13김*운", gender: 0 },
+  { id: "14김*연", gender: 1 },
+  { id: "15류*인", gender: 1 },
+  { id: "16민*이", gender: 0 },
+  { id: "17박*들", gender: 0 },
+  { id: "18박*이", gender: 1 },
+  { id: "19박*성", gender: 0 },
+  { id: "110배*서", gender: 0 },
+  { id: "111봉*균", gender: 0 },
+  { id: "112성*율", gender: 0 },
+  { id: "113원*준", gender: 0 },
+  { id: "114윤*민", gender: 1 },
+  { id: "115윤*희", gender: 0 },
+  { id: "116이*유", gender: 1 },
+  { id: "117이*은", gender: 1 },
+  { id: "118장*린", gender: 1 },
+  { id: "119전*훈", gender: 0 },
+  { id: "120정*림", gender: 1 },
+  { id: "121진*우", gender: 0 },
+  { id: "122채*서", gender: 1 },
+  { id: "123최*슬", gender: 1 },
+  { id: "124한*연", gender: 3 },
+  { id: "125현*민", gender: 1 },
+];
+const linkTypes = {
+friend: [
+    { source: "12김*준", target: "11김*재", type: "friend", bidirectional: false },
+    { source: "12김*준", target: "19박*성", type: "friend", bidirectional: true },
+    { source: "12김*준", target: "112성*율", type: "friend", bidirectional: true },
+    { source: "13김*운", target: "11김*재", type: "friend", bidirectional: false },
+    { source: "13김*운", target: "12김*준", type: "friend", bidirectional: false },
+    { source: "13김*운", target: "14김*연", type: "friend", bidirectional: false },
+    { source: "13김*운", target: "16민*이", type: "friend", bidirectional: false },
+    { source: "13김*운", target: "17박*들", type: "friend", bidirectional: true },
+    { source: "13김*운", target: "19박*성", type: "friend", bidirectional: true },
+    { source: "13김*운", target: "110배*서", type: "friend", bidirectional: true },
+    { source: "13김*운", target: "111봉*균", type: "friend", bidirectional: false },
+    { source: "13김*운", target: "120정*림", type: "friend", bidirectional: false },
+    { source: "13김*운", target: "121진*우", type: "friend", bidirectional: false },
+    { source: "14김*연", target: "15류*인", type: "friend", bidirectional: false },
+    { source: "14김*연", target: "18박*이", type: "friend", bidirectional: true },
+    { source: "14김*연", target: "19박*성", type: "friend", bidirectional: true },
+    { source: "14김*연", target: "114윤*민", type: "friend", bidirectional: true },
+    { source: "14김*연", target: "116이*유", type: "friend", bidirectional: true },
+    { source: "14김*연", target: "117이*은", type: "friend", bidirectional: true },
+    { source: "14김*연", target: "118장*린", type: "friend", bidirectional: true },
+    { source: "14김*연", target: "123최*슬", type: "friend", bidirectional: true },
+    { source: "14김*연", target: "125현*민", type: "friend", bidirectional: true },
+    { source: "15류*인", target: "114윤*민", type: "friend", bidirectional: true },
+    { source: "15류*인", target: "120정*림", type: "friend", bidirectional: true },
+    { source: "15류*인", target: "122채*서", type: "friend", bidirectional: true },
+    { source: "15류*인", target: "124한*연", type: "friend", bidirectional: false },
+    { source: "16민*이", target: "112성*율", type: "friend", bidirectional: true },
+    { source: "16민*이", target: "113원*준", type: "friend", bidirectional: true },
+    { source: "17박*들", target: "11김*재", type: "friend", bidirectional: false },
+    { source: "17박*들", target: "12김*준", type: "friend", bidirectional: false },
+    { source: "17박*들", target: "19박*성", type: "friend", bidirectional: true },
+    { source: "17박*들", target: "110배*서", type: "friend", bidirectional: false },
+    { source: "17박*들", target: "111봉*균", type: "friend", bidirectional: false },
+    { source: "17박*들", target: "115윤*희", type: "friend", bidirectional: true },
+    { source: "18박*이", target: "15류*인", type: "friend", bidirectional: false },
+    { source: "18박*이", target: "19박*성", type: "friend", bidirectional: true },
+    { source: "18박*이", target: "112성*율", type: "friend", bidirectional: false },
+    { source: "18박*이", target: "114윤*민", type: "friend", bidirectional: false },
+    { source: "18박*이", target: "116이*유", type: "friend", bidirectional: false },
+    { source: "18박*이", target: "117이*은", type: "friend", bidirectional: true },
+    { source: "18박*이", target: "118장*린", type: "friend", bidirectional: false },
+    { source: "18박*이", target: "120정*림", type: "friend", bidirectional: false },
+    { source: "18박*이", target: "123최*슬", type: "friend", bidirectional: false },
+    { source: "18박*이", target: "125현*민", type: "friend", bidirectional: false },
+    { source: "19박*성", target: "11김*재", type: "friend", bidirectional: false },
+    { source: "19박*성", target: "110배*서", type: "friend", bidirectional: false },
+    { source: "19박*성", target: "111봉*균", type: "friend", bidirectional: false },
+    { source: "19박*성", target: "115윤*희", type: "friend", bidirectional: true },
+    { source: "19박*성", target: "120정*림", type: "friend", bidirectional: false },
+    { source: "110배*서", target: "111봉*균", type: "friend", bidirectional: true },
+    { source: "111봉*균", target: "11김*재", type: "friend", bidirectional: false },
+    { source: "112성*율", target: "113원*준", type: "friend", bidirectional: true },
+    { source: "112성*율", target: "115윤*희", type: "friend", bidirectional: true },
+    { source: "112성*율", target: "121진*우", type: "friend", bidirectional: true },
+    { source: "113원*준", target: "11김*재", type: "friend", bidirectional: false },
+    { source: "113원*준", target: "12김*준", type: "friend", bidirectional: false },
+    { source: "113원*준", target: "13김*운", type: "friend", bidirectional: false },
+    { source: "113원*준", target: "17박*들", type: "friend", bidirectional: false },
+    { source: "113원*준", target: "19박*성", type: "friend", bidirectional: false },
+    { source: "113원*준", target: "110배*서", type: "friend", bidirectional: false },
+    { source: "113원*준", target: "111봉*균", type: "friend", bidirectional: false },
+    { source: "113원*준", target: "115윤*희", type: "friend", bidirectional: true },
+    { source: "113원*준", target: "121진*우", type: "friend", bidirectional: false },
+    { source: "114윤*민", target: "116이*유", type: "friend", bidirectional: false },
+    { source: "114윤*민", target: "117이*은", type: "friend", bidirectional: true },
+    { source: "114윤*민", target: "118장*린", type: "friend", bidirectional: false },
+    { source: "114윤*민", target: "120정*림", type: "friend", bidirectional: true },
+    { source: "114윤*민", target: "123최*슬", type: "friend", bidirectional: false },
+    { source: "115윤*희", target: "11김*재", type: "friend", bidirectional: false },
+    { source: "115윤*희", target: "12김*준", type: "friend", bidirectional: false },
+    { source: "115윤*희", target: "16민*이", type: "friend", bidirectional: false },
+    { source: "115윤*희", target: "121진*우", type: "friend", bidirectional: true },
+    { source: "116이*유", target: "15류*인", type: "friend", bidirectional: false },
+    { source: "116이*유", target: "117이*은", type: "friend", bidirectional: true },
+    { source: "116이*유", target: "118장*린", type: "friend", bidirectional: false },
+    { source: "116이*유", target: "123최*슬", type: "friend", bidirectional: true },
+    { source: "117이*은", target: "118장*린", type: "friend", bidirectional: true },
+    { source: "119전*훈", target: "11김*재", type: "friend", bidirectional: false },
+    { source: "119전*훈", target: "12김*준", type: "friend", bidirectional: false },
+    { source: "119전*훈", target: "122채*서", type: "friend", bidirectional: false },
+    { source: "119전*훈", target: "124한*연", type: "friend", bidirectional: false },
+    { source: "120정*림", target: "125현*민", type: "friend", bidirectional: true },
+    { source: "122채*서", target: "124한*연", type: "friend", bidirectional: false },
+    { source: "123최*슬", target: "117이*은", type: "friend", bidirectional: false },
+    { source: "123최*슬", target: "118장*린", type: "friend", bidirectional: false },
+    { source: "125현*민", target: "15류*인", type: "friend", bidirectional: false },
+    { source: "125현*민", target: "116이*유", type: "friend", bidirectional: false },
+    { source: "125현*민", target: "123최*슬", type: "friend", bidirectional: false },
+    { source: "125현*민", target: "124한*연", type: "friend", bidirectional: false },
+  ],
+desired: [
+    { source: "12김*준", target: "115윤*희", type: "desired", bidirectional: false },
+    { source: "13김*운", target: "119전*훈", type: "desired", bidirectional: false },
+    { source: "14김*연", target: "116이*유", type: "desired", bidirectional: true },
+    { source: "14김*연", target: "117이*은", type: "desired", bidirectional: false },
+    { source: "14김*연", target: "118장*린", type: "desired", bidirectional: false },
+    { source: "15류*인", target: "117이*은", type: "desired", bidirectional: true },
+    { source: "17박*들", target: "11김*재", type: "desired", bidirectional: false },
+    { source: "17박*들", target: "12김*준", type: "desired", bidirectional: false },
+    { source: "17박*들", target: "13김*운", type: "desired", bidirectional: false },
+    { source: "17박*들", target: "19박*성", type: "desired", bidirectional: false },
+    { source: "17박*들", target: "115윤*희", type: "desired", bidirectional: false },
+    { source: "18박*이", target: "14김*연", type: "desired", bidirectional: false },
+    { source: "18박*이", target: "114윤*민", type: "desired", bidirectional: false },
+    { source: "18박*이", target: "117이*은", type: "desired", bidirectional: false },
+    { source: "18박*이", target: "118장*린", type: "desired", bidirectional: false },
+    { source: "18박*이", target: "123최*슬", type: "desired", bidirectional: false },
+    { source: "19박*성", target: "112성*율", type: "desired", bidirectional: false },
+    { source: "19박*성", target: "117이*은", type: "desired", bidirectional: false },
+    { source: "19박*성", target: "121진*우", type: "desired", bidirectional: false },
+    { source: "110배*서", target: "17박*들", type: "desired", bidirectional: false },
+    { source: "111봉*균", target: "11김*재", type: "desired", bidirectional: false },
+    { source: "111봉*균", target: "13김*운", type: "desired", bidirectional: false },
+    { source: "111봉*균", target: "19박*성", type: "desired", bidirectional: false },
+    { source: "111봉*균", target: "110배*서", type: "desired", bidirectional: false },
+    { source: "112성*율", target: "11김*재", type: "desired", bidirectional: false },
+    { source: "112성*율", target: "12김*준", type: "desired", bidirectional: false },
+    { source: "112성*율", target: "16민*이", type: "desired", bidirectional: false },
+    { source: "112성*율", target: "113원*준", type: "desired", bidirectional: true },
+    { source: "112성*율", target: "115윤*희", type: "desired", bidirectional: false },
+    { source: "112성*율", target: "121진*우", type: "desired", bidirectional: true },
+    { source: "113원*준", target: "11김*재", type: "desired", bidirectional: false },
+    { source: "113원*준", target: "12김*준", type: "desired", bidirectional: false },
+    { source: "113원*준", target: "13김*운", type: "desired", bidirectional: false },
+    { source: "113원*준", target: "16민*이", type: "desired", bidirectional: false },
+    { source: "113원*준", target: "17박*들", type: "desired", bidirectional: false },
+    { source: "113원*준", target: "19박*성", type: "desired", bidirectional: false },
+    { source: "113원*준", target: "110배*서", type: "desired", bidirectional: false },
+    { source: "113원*준", target: "111봉*균", type: "desired", bidirectional: false },
+    { source: "113원*준", target: "115윤*희", type: "desired", bidirectional: false },
+    { source: "113원*준", target: "119전*훈", type: "desired", bidirectional: false },
+    { source: "113원*준", target: "121진*우", type: "desired", bidirectional: false },
+    { source: "114윤*민", target: "125현*민", type: "desired", bidirectional: false },
+    { source: "115윤*희", target: "123최*슬", type: "desired", bidirectional: false },
+    { source: "115윤*희", target: "124한*연", type: "desired", bidirectional: false },
+    { source: "116이*유", target: "15류*인", type: "desired", bidirectional: false },
+    { source: "116이*유", target: "117이*은", type: "desired", bidirectional: false },
+    { source: "116이*유", target: "118장*린", type: "desired", bidirectional: false },
+    { source: "117이*은", target: "124한*연", type: "desired", bidirectional: false },
+    { source: "118장*린", target: "117이*은", type: "desired", bidirectional: false },
+    { source: "119전*훈", target: "11김*재", type: "desired", bidirectional: false },
+    { source: "119전*훈", target: "12김*준", type: "desired", bidirectional: false },
+    { source: "119전*훈", target: "115윤*희", type: "desired", bidirectional: false },
+    { source: "119전*훈", target: "122채*서", type: "desired", bidirectional: false },
+    { source: "119전*훈", target: "124한*연", type: "desired", bidirectional: false },
+    { source: "120정*림", target: "18박*이", type: "desired", bidirectional: false },
+    { source: "120정*림", target: "112성*율", type: "desired", bidirectional: false },
+    { source: "120정*림", target: "115윤*희", type: "desired", bidirectional: false },
+    { source: "120정*림", target: "116이*유", type: "desired", bidirectional: false },
+    { source: "120정*림", target: "117이*은", type: "desired", bidirectional: false },
+    { source: "120정*림", target: "118장*린", type: "desired", bidirectional: false },
+    { source: "120정*림", target: "123최*슬", type: "desired", bidirectional: false },
+    { source: "120정*림", target: "124한*연", type: "desired", bidirectional: false },
+    { source: "122채*서", target: "11김*재", type: "desired", bidirectional: false },
+    { source: "123최*슬", target: "14김*연", type: "desired", bidirectional: false },
+    { source: "123최*슬", target: "116이*유", type: "desired", bidirectional: false },
+    { source: "123최*슬", target: "117이*은", type: "desired", bidirectional: false },
+    { source: "123최*슬", target: "118장*린", type: "desired", bidirectional: false },
+    { source: "125현*민", target: "117이*은", type: "desired", bidirectional: false },
+    { source: "125현*민", target: "118장*린", type: "desired", bidirectional: false },
+  ],
+study: [
+    { source: "12김*준", target: "117이*은", type: "study", bidirectional: true },
+    { source: "13김*운", target: "18박*이", type: "study", bidirectional: false },
+    { source: "14김*연", target: "11김*재", type: "study", bidirectional: false },
+    { source: "14김*연", target: "110배*서", type: "study", bidirectional: true },
+    { source: "14김*연", target: "111봉*균", type: "study", bidirectional: true },
+    { source: "14김*연", target: "123최*슬", type: "study", bidirectional: false },
+    { source: "15류*인", target: "121진*우", type: "study", bidirectional: true },
+    { source: "16민*이", target: "124한*연", type: "study", bidirectional: false },
+    { source: "17박*들", target: "115윤*희", type: "study", bidirectional: true },
+    { source: "18박*이", target: "19박*성", type: "study", bidirectional: false },
+    { source: "18박*이", target: "114윤*민", type: "study", bidirectional: true },
+    { source: "18박*이", target: "117이*은", type: "study", bidirectional: false },
+    { source: "18박*이", target: "125현*민", type: "study", bidirectional: false },
+    { source: "19박*성", target: "120정*림", type: "study", bidirectional: true },
+    { source: "110배*서", target: "111봉*균", type: "study", bidirectional: true },
+    { source: "111봉*균", target: "11김*재", type: "study", bidirectional: false },
+    { source: "111봉*균", target: "123최*슬", type: "study", bidirectional: false },
+    { source: "113원*준", target: "118장*린", type: "study", bidirectional: true },
+    { source: "114윤*민", target: "115윤*희", type: "study", bidirectional: true },
+    { source: "114윤*민", target: "117이*은", type: "study", bidirectional: false },
+    { source: "114윤*민", target: "120정*림", type: "study", bidirectional: false },
+    { source: "115윤*희", target: "120정*림", type: "study", bidirectional: false },
+    { source: "116이*유", target: "117이*은", type: "study", bidirectional: false },
+    { source: "122채*서", target: "19박*성", type: "study", bidirectional: false },
+    { source: "123최*슬", target: "124한*연", type: "study", bidirectional: false },
+    { source: "125현*민", target: "120정*림", type: "study", bidirectional: false },
+  ],
+collab: [
+    { source: "12김*준", target: "11김*재", type: "collab", bidirectional: false },
+    { source: "12김*준", target: "19박*성", type: "collab", bidirectional: false },
+    { source: "12김*준", target: "112성*율", type: "collab", bidirectional: true },
+    { source: "13김*운", target: "19박*성", type: "collab", bidirectional: true },
+    { source: "14김*연", target: "11김*재", type: "collab", bidirectional: false },
+    { source: "14김*연", target: "110배*서", type: "collab", bidirectional: false },
+    { source: "14김*연", target: "111봉*균", type: "collab", bidirectional: false },
+    { source: "14김*연", target: "123최*슬", type: "collab", bidirectional: true },
+    { source: "15류*인", target: "16민*이", type: "collab", bidirectional: false },
+    { source: "15류*인", target: "121진*우", type: "collab", bidirectional: true },
+    { source: "15류*인", target: "124한*연", type: "collab", bidirectional: false },
+    { source: "16민*이", target: "124한*연", type: "collab", bidirectional: false },
+    { source: "17박*들", target: "114윤*민", type: "collab", bidirectional: false },
+    { source: "17박*들", target: "115윤*희", type: "collab", bidirectional: true },
+    { source: "18박*이", target: "11김*재", type: "collab", bidirectional: false },
+    { source: "18박*이", target: "14김*연", type: "collab", bidirectional: false },
+    { source: "18박*이", target: "114윤*민", type: "collab", bidirectional: false },
+    { source: "18박*이", target: "123최*슬", type: "collab", bidirectional: false },
+    { source: "19박*성", target: "122채*서", type: "collab", bidirectional: false },
+    { source: "110배*서", target: "11김*재", type: "collab", bidirectional: false },
+    { source: "110배*서", target: "111봉*균", type: "collab", bidirectional: true },
+    { source: "111봉*균", target: "11김*재", type: "collab", bidirectional: false },
+    { source: "112성*율", target: "11김*재", type: "collab", bidirectional: false },
+    { source: "112성*율", target: "16민*이", type: "collab", bidirectional: false },
+    { source: "112성*율", target: "113원*준", type: "collab", bidirectional: false },
+    { source: "112성*율", target: "115윤*희", type: "collab", bidirectional: false },
+    { source: "112성*율", target: "121진*우", type: "collab", bidirectional: false },
+    { source: "113원*준", target: "118장*린", type: "collab", bidirectional: false },
+    { source: "114윤*민", target: "117이*은", type: "collab", bidirectional: true },
+    { source: "116이*유", target: "14김*연", type: "collab", bidirectional: false },
+    { source: "116이*유", target: "117이*은", type: "collab", bidirectional: true },
+    { source: "117이*은", target: "14김*연", type: "collab", bidirectional: false },
+    { source: "117이*은", target: "18박*이", type: "collab", bidirectional: false },
+    { source: "117이*은", target: "118장*린", type: "collab", bidirectional: true },
+    { source: "120정*림", target: "114윤*민", type: "collab", bidirectional: false },
+    { source: "122채*서", target: "15류*인", type: "collab", bidirectional: false },
+    { source: "125현*민", target: "15류*인", type: "collab", bidirectional: false },
+    { source: "125현*민", target: "120정*림", type: "collab", bidirectional: false },
+  ],
+help: [
+    { source: "12김*준", target: "11김*재", type: "help", bidirectional: false },
+    { source: "13김*운", target: "11김*재", type: "help", bidirectional: false },
+    { source: "14김*연", target: "11김*재", type: "help", bidirectional: false },
+    { source: "14김*연", target: "110배*서", type: "help", bidirectional: true },
+    { source: "14김*연", target: "111봉*균", type: "help", bidirectional: false },
+    { source: "15류*인", target: "121진*우", type: "help", bidirectional: false },
+    { source: "17박*들", target: "114윤*민", type: "help", bidirectional: true },
+    { source: "18박*이", target: "19박*성", type: "help", bidirectional: false },
+    { source: "18박*이", target: "123최*슬", type: "help", bidirectional: false },
+    { source: "19박*성", target: "122채*서", type: "help", bidirectional: false },
+    { source: "111봉*균", target: "110배*서", type: "help", bidirectional: false },
+    { source: "112성*율", target: "11김*재", type: "help", bidirectional: false },
+    { source: "115윤*희", target: "120정*림", type: "help", bidirectional: true },
+    { source: "116이*유", target: "117이*은", type: "help", bidirectional: false },
+    { source: "117이*은", target: "14김*연", type: "help", bidirectional: false },
+    { source: "117이*은", target: "118장*린", type: "help", bidirectional: true },
+    { source: "119전*훈", target: "11김*재", type: "help", bidirectional: false },
+    { source: "119전*훈", target: "12김*준", type: "help", bidirectional: false },
+    { source: "119전*훈", target: "116이*유", type: "help", bidirectional: false },
+    { source: "122채*서", target: "120정*림", type: "help", bidirectional: false },
+    { source: "123최*슬", target: "14김*연", type: "help", bidirectional: false },
+    { source: "123최*슬", target: "117이*은", type: "help", bidirectional: false },
+    { source: "125현*민", target: "120정*림", type: "help", bidirectional: false },
+  ]
+};
+  // 여기에 students 와 linkTypes 삽입
+  </script>
+
+  <svg width="0" height="0">
+    <defs>
+      <marker id="arrow-friend" viewBox="0 -5 10 10" refX="22" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+        <path d="M0,-5L10,0L0,5" fill="#000000" />
+      </marker>
+      <marker id="arrow-desired" viewBox="0 -5 10 10" refX="22" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+        <path d="M0,-5L10,0L0,5" fill="#5DADEC" />
+      </marker>
+      <marker id="arrow-study" viewBox="0 -5 10 10" refX="22" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+        <path d="M0,-5L10,0L0,5" fill="#32CD32" />
+      </marker>
+      <marker id="arrow-collab" viewBox="0 -5 10 10" refX="22" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+        <path d="M0,-5L10,0L0,5" fill="#8A2BE2" />
+      </marker>
+      <marker id="arrow-help" viewBox="0 -5 10 10" refX="22" refY="0" markerWidth="10" markerHeight="10" orient="auto">
+        <path d="M0,-5L10,0L0,5" fill="#FF0000" />
+      </marker>
+    </defs>
+  </svg>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script>
+    let simulation, svg, g, linkGroup, nodeGroup, labelGroup;
+    const colorMap = {
+      friend: "#000000", desired: "#5DADEC", study: "#32CD32", collab: "#8A2BE2", help: "#FF0000"
+    };
+    const markerMap = {
+      friend: "arrow-friend", desired: "arrow-desired", study: "arrow-study",
+      collab: "arrow-collab", help: "arrow-help"
+    };
+    const activeTypes = { friend: false, desired: false, study: false, collab: false, help: false };
+
+    function drawNetwork() {
+      d3.select("svg.main").remove();
+      svg = d3.select("body").append("svg")
+        .attr("class", "main")
+        .attr("width", window.innerWidth)
+        .attr("height", window.innerHeight)
+        .call(d3.zoom().on("zoom", function (event) {
+          g.attr("transform", event.transform);
+        }))
+        .on("dblclick.zoom", null);
+
+      g = svg.append("g");
+      linkGroup = g.append("g");
+      nodeGroup = g.append("g");
+      labelGroup = g.append("g");
+
+      const allLinks = Object.entries(linkTypes).flatMap(([type, links]) =>
+        links.flatMap(d => {
+          const base = {
+            type: type,
+            stroke: colorMap[type],
+            marker: markerMap[type]
+          };
+          if (d.bidirectional) {
+            return [
+              { ...d, ...base }, // source -> target
+              { source: d.target, target: d.source, ...base } // target -> source
+            ];
+          } else {
+            return [{ ...d, ...base }];
+          }
+        })
+      );
+
+      simulation = d3.forceSimulation(students)
+        .force("link", d3.forceLink().id(d => d.id).distance(200).links(allLinks))
+        .force("charge", d3.forceManyBody().strength(-600))
+        .force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
+        .force("collide", d3.forceCollide(60))
+        .on("end", () => {
+          students.forEach(d => {
+            d.fx = d.x;
+            d.fy = d.y;
+          });
+        });
+
+      const link = linkGroup.selectAll("line")
+        .data(allLinks)
+        .enter().append("line")
+        .attr("class", d => `link ${d.type}`)
+        .attr("stroke", d => d.stroke)
+        .attr("marker-end", d => `url(#${d.marker})`)
+        .style("display", d => activeTypes[d.type] ? "inline" : "none");
+
+      const node = nodeGroup.selectAll("circle")
+        .data(students)
+        .enter().append("circle")
+        .attr("r", 20)
+        .attr("fill", d => d.gender === 1 ? "pink" : d.gender === 0 ? "skyblue" : "gray")
+        .attr("class", "node")
+        .call(d3.drag()
+          .on("start", event => simulation.alphaTarget(0.3).restart())
+          .on("drag", (event, d) => { d.fx = event.x; d.fy = event.y; })
+          .on("end", (event, d) => { d.fx = event.x; d.fy = event.y; }))
+        .on("dblclick", function(event, d) {
+          node.classed("highlight-node", n => n === d);
+          link.classed("highlight", l => l.source.id === d.id || l.target.id === d.id);
+        });
+
+      const label = labelGroup.selectAll("text")
+        .data(students)
+        .enter().append("text")
+        .text(d => d.id)
+        .attr("font-size", "12px")
+        .attr("text-anchor", "middle")
+        .attr("dy", 4);
+
+      svg.on("click", () => {
+        node.classed("highlight-node", false);
+        link.classed("highlight", false);
+      });
+
+      simulation.on("tick", () => {
+        node.attr("cx", d => d.x).attr("cy", d => d.y);
+        label.attr("x", d => d.x).attr("y", d => d.y);
+        link
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+      });
+    }
+
+    window.onload = drawNetwork;
+
+    function toggleLinks(type) {
+      activeTypes[type] = !activeTypes[type];
+      d3.selectAll(`.link.${type}`).style("display", activeTypes[type] ? "inline" : "none");
+    }
+  </script>
+</body>
+</html>
