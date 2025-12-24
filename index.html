@@ -1,177 +1,45 @@
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>qweryuo</title>
-
+  <meta charset="UTF-8">
+  <title>학생 네트워크 시각화</title>
   <style>
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-      background:#0f172a;
-      color:#e5e7eb;
+    body {
+      font-family: sans-serif;
+      padding: 40px;
+      background: #f9f9f9;
     }
-    .wrap{
-      max-width:1100px;
-      margin:0 auto;
-      padding:24px;
+    h1 {
+      color: #333;
     }
-    h1{
-      margin:0 0 8px;
-      font-size:24px;
+    ul {
+      list-style: none;
+      padding: 0;
     }
-    p{
-      margin:0 0 20px;
-      color:#cbd5f5;
-      font-size:14px;
+    li {
+      margin: 10px 0;
     }
-    .grid{
-      display:grid;
-      grid-template-columns: 360px 1fr;
-      gap:16px;
+    a {
+      text-decoration: none;
+      font-size: 18px;
+      color: #0056b3;
     }
-    .card{
-      background:#111827;
-      border:1px solid #1e293b;
-      border-radius:14px;
-      padding:16px;
-    }
-    label{
-      font-size:13px;
-      color:#a5b4fc;
-    }
-    select, button{
-      width:100%;
-      margin-top:8px;
-      padding:10px;
-      border-radius:10px;
-      border:1px solid #334155;
-      background:#020617;
-      color:#e5e7eb;
-      font-size:14px;
-    }
-    button{
-      cursor:pointer;
-      background:#2563eb;
-      border:none;
-      margin-top:10px;
-    }
-    button.secondary{
-      background:#16a34a;
-    }
-    button:hover{
-      opacity:.9;
-    }
-    iframe{
-      width:100%;
-      height:75vh;
-      border:none;
-      background:white;
-      border-radius:12px;
-    }
-    .list{
-      margin-top:16px;
-      display:grid;
-      gap:8px;
-    }
-    .item{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      background:#020617;
-      border:1px solid #1e293b;
-      border-radius:10px;
-      padding:8px 10px;
-      font-size:13px;
-    }
-    .item a{
-      color:#93c5fd;
-      text-decoration:none;
+    a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 
 <body>
-  <div class="wrap">
-    <h1>qweryuo</h1>
-    <p>HTML 파일을 선택해서 바로 열어보세요.</p>
+  <h1>📘 학생 네트워크 시각화 목록</h1>
 
-    <div class="grid">
-      <!-- 왼쪽 메뉴 -->
-      <div class="card">
-        <label for="pageSelect">페이지 선택</label>
-        <select id="pageSelect"></select>
-
-        <button id="openHere">이 화면에서 열기</button>
-        <button id="openNew" class="secondary">새 탭으로 열기</button>
-
-        <div class="list" id="quickList"></div>
-      </div>
-
-      <!-- 오른쪽 미리보기 -->
-      <div class="card">
-        <iframe id="viewer"></iframe>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    /* ✅ 네 GitHub에 실제로 있는 파일들 */
-    const PAGES = [
-      "2025 하원초 Wave1_3-1(응답).html",
-      "2025 하원초 Wave1_3-2(응답).html",
-      "2025 하원초 Wave1_3-3(응답).html",
-      "2025 하원초 Wave1_3-4(응답).html",
-      "2025 하원초 Wave1_4-1(응답).html",
-      "2025 하원초 Wave1_4-2(응답).html"
-    ];
-
-    const select = document.getElementById("pageSelect");
-    const iframe = document.getElementById("viewer");
-    const openHere = document.getElementById("openHere");
-    const openNew = document.getElementById("openNew");
-    const quickList = document.getElementById("quickList");
-
-    /* 드롭다운 채우기 */
-    PAGES.forEach(page=>{
-      const opt = document.createElement("option");
-      opt.value = page;
-      opt.textContent = page;
-      select.appendChild(opt);
-
-      const row = document.createElement("div");
-      row.className = "item";
-      row.innerHTML = `
-        <span>${page}</span>
-        <a href="${page}" target="_blank">열기</a>
-      `;
-      quickList.appendChild(row);
-    });
-
-    function openSelected(inNewTab=false){
-      const page = select.value;
-      if(!page) return;
-      if(inNewTab){
-        window.open(page, "_blank");
-      }else{
-        iframe.src = page;
-      }
-    }
-
-    openHere.onclick = ()=>openSelected(false);
-    openNew.onclick = ()=>openSelected(true);
-
-    /* URL ?page= 로 바로 열기 */
-    const params = new URLSearchParams(location.search);
-    if(params.get("page")){
-      const p = params.get("page");
-      if(PAGES.includes(p)){
-        select.value = p;
-        iframe.src = p;
-      }
-    }
-  </script>
+  <ul>
+    <li><a href="2025 하원초 Wave1_3-1(응답).html">2025 하원초 Wave1 3-1</a></li>
+    <li><a href="2025 하원초 Wave1_3-2(응답).html">2025 하원초 Wave1 3-2</a></li>
+    <li><a href="2025 하원초 Wave1_3-3(응답).html">2025 하원초 Wave1 3-3</a></li>
+    <li><a href="2025 하원초 Wave1_3-4(응답).html">2025 하원초 Wave1 3-4</a></li>
+    <li><a href="2025 하원초 Wave1_4-1(응답).html">2025 하원초 Wave1 4-1</a></li>
+    <li><a href="2025 하원초 Wave1_4-2(응답).html">2025 하원초 Wave1 4-2</a></li>
+  </ul>
 </body>
 </html>
